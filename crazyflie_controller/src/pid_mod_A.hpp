@@ -24,7 +24,6 @@ public:
         , m_integral(0)
         , m_previousError(0)
         , m_previousTime(ros::Time::now())
-        , m_previousTime2(ros::Time::now())
         , m_v_prev(0)
     {
     }
@@ -70,14 +69,15 @@ public:
         // self.pubI.publish(i)
         return std::max(std::min(output, m_maxOutput), m_minOutput);
     }
-         float get_cur_vel(float x_i)
+
+     float get_cur_vel(float x_i)
     {
     
         ros::Time time = ros::Time::now(); // get current time
-        float dt = time.toSec() - m_previousTime2.toSec(); // delta t 
+        float dt = time.toSec() - m_previousTime.toSec(); // delta t 
         float dx = x_i - m_v_prev; // difference in position between current and prev timestep
         m_v_prev = x_i; //  assign current to previous  
-        m_previousTime2 = time;
+        m_previousTime = time;
 
         float dxdt = 0; //prevent singularity
         if (dt > 0) 
@@ -88,15 +88,8 @@ public:
         return dxdt;
     
     }
-    /*
-    double desired_pitch(vx,vx_des,vy,vy_des,yaw)
-    {
-        return 0;
-    }
-    double desired_roll()
-    {
-        return 0;
-    }       */
+
+
 
 private:
     float m_kp;
@@ -110,5 +103,4 @@ private:
     float m_previousError;
     float m_v_prev; // store position (X,Y, or Z) 
     ros::Time m_previousTime;
-    ros::Time m_previousTime2;
 };

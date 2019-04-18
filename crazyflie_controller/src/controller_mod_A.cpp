@@ -2,8 +2,6 @@
 #include <tf/transform_listener.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Twist.h>
-#include <math.h>
-
 
 #include "pid.hpp"
 
@@ -69,13 +67,12 @@ public:
         , m_serviceTakeoff()
         , m_serviceLand()
         , m_thrust(0)
-        , m_startZ(0) 
+        , m_startZ(0)
     {
         ros::NodeHandle nh;
         m_listener.waitForTransform(m_worldFrame, m_frame, ros::Time(0), ros::Duration(10.0)); 
         m_pubNav = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
-        m_vel    = nh.advertise<geometry_msgs::Point>("AR_vel", 1); // written by me
-        m_des_att    = nh.advertise<geometry_msgs::Point>("des_attitude", 1); // written by me 
+        m_vel = nh.advertise<geometry_msgs::Twist>("AR_vel", 1); // written by me 
         m_subscribeGoal = nh.subscribe("goal", 1, &Controller::goalChanged, this);
         m_serviceTakeoff = nh.advertiseService("takeoff", &Controller::takeoff, this);
         m_serviceLand = nh.advertiseService("land", &Controller::land, this);
@@ -89,35 +86,6 @@ public:
     }
 
 private:
-    float desired_pitch(float vx_curr,float vx_des,float vy_curr,float vy_des,float yaw,float g,float kx,float ky)
-    {
-        float ex = vx_curr - vx_des;
-        float ey = vy_curr - vy_des;
-        float des_pitch =  ((0-kx*ex)*cos(yaw*M_PI/180)+(0-ky*ey)*sin(yaw*M_PI/180))/(-g); // in radians
-        des_pitch = des_pitch*180/M_PI;
-
-        if(abs(des_pitch)<=30)
-            return des_pitch;
-        else if(des_pitch>0) 
-            return 30;  
-        else if(des_pitch<0)
-            return -30;
-        
-    }
-    float desired_roll(float vx_curr,float vx_des,float vy_curr,float vy_des,float yaw,float g,float kx,float ky,float des_phi)
-    {
-        float ex = vx_curr - vx_des;
-        float ey = vy_curr - vy_des;
-        float des_roll =  ((0-kx*ex)*sin(yaw*M_PI/180)*cos(des_phi*M_PI/180)-(0-ky*ey)*cos(yaw*M_PI/180)*cos(des_phi*M_PI/180))/(-g); // in radians
-        des_roll =  des_roll*180/M_PI;
-        if(abs(des_roll)<=30)
-            return des_roll;
-        else if(des_roll>0)
-            return 30;  
-        else if(des_roll<0)
-            return -30;         
-    }
-
     void goalChanged(
         const geometry_msgs::PoseStamped::ConstPtr& msg)
     {
@@ -206,15 +174,20 @@ private:
         case Automatic:
             {
                 tf::StampedTransform transform;
-                m_listener.lookupTransform(m_worldFrame, m_frame, ros::Time(0), transform);
+                m_listener.lookupTransform(m_worldFrame, m_frame, ros::Time(0), transform); // define transform
+
+                 /* in theory this should get me current the inertial xyz coordinates of the body frame 
+                float x_i =  transform.getOrigin().x();
+                float y_i =  transform.getOrigin().y();
+                float z_i =  transform.getOrigin().z(); */
 
                 geometry_msgs::PoseStamped targetWorld;
                 targetWorld.header.stamp = transform.stamp_;
                 targetWorld.header.frame_id = m_worldFrame;
-                targetWorld.pose = m_goal.pose;
+                targetWorld.pose = m_goal.pose; // definition of desired trajectory 
 
                 geometry_msgs::PoseStamped targetDrone;
-                m_listener.transformPose(m_frame, targetWorld, targetDrone);
+                m_listener.transformPose(m_frame, targetWorld, targetDrone); // transform into the b frame (target drone is the new vector trandformed to the body frm)
 
                 tfScalar roll, pitch, yaw;
                 tf::Matrix3x3(
@@ -226,24 +199,23 @@ private:
                     )).getRPY(roll, pitch, yaw);
 
                 geometry_msgs::Twist msg;
-                geometry_msgs::Point vel;
-                geometry_msgs::Point des_attitude;
+                geometry_msgs::Twist vel;
                 
                 //linear vel in each direction calculate based on current position (prev pos is stored in class definition each iter)
-                vel.x = m_pidX.get_cur_vel(transform.getOrigin().x());
-                vel.y = m_pidY.get_cur_vel(transform.getOrigin().y());
-                vel.z = m_pidZ.get_cur_vel(transform.getOrigin().z());
+                float vx_i = m_pidX.get_cur_vel(transform.getOrigin().x());
+                float vy_i = m_pidY.get_cur_vel(transform.getOrigin().y());
+                float vz_i = m_pidZ.get_cur_vel(transform.getOrigin().z());
+                //assign to a ROS message to publish 
+                vel.linear.x = vx_i;
+                vel.linear.y = vy_i;
+                vel.linear.z = vz_i;
 
-                des_attitude.x = desired_pitch(vel.x,.2,vel.y,.2,yaw,9.8,3.5,3.5);
-                des_attitude.y = desired_roll(vel.x,.2,vel.y,.2,yaw,9.8,3.5,3.5,des_attitude.x);
-                
-                msg.linear.x = m_pidX.update(0, targetDrone.pose.position.x);
-                msg.linear.y = m_pidY.update(0.0, targetDrone.pose.position.y);
-                msg.linear.z = m_pidZ.update(0.0, targetDrone.pose.position.z);
+                msg.linear.x = m_pidX.update(0, targetDrone.pose.position.x); //roll
+                msg.linear.y = m_pidY.update(0.0, targetDrone.pose.position.y); //pitch
+                msg.linear.z = m_pidZ.update(0.0, targetDrone.pose.position.z);//thrust
                 msg.angular.z = m_pidYaw.update(0.0, yaw);
                 m_pubNav.publish(msg);
                 m_vel.publish(vel); 
-                m_des_att.publish(des_attitude);
 
 
             }
@@ -271,8 +243,7 @@ private:
     std::string m_worldFrame;
     std::string m_frame;
     ros::Publisher m_pubNav;
-    ros::Publisher m_vel; 
-    ros::Publisher m_des_att; 
+    ros::Publisher m_vel;
     tf::TransformListener m_listener;
     PID m_pidX;
     PID m_pidY;

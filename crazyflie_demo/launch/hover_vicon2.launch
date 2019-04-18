@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="uri" default="radio://0/10/2M" />
-  <arg name="frame" default="/vicon/crazyflie2/crazyflie2" />
+  <arg name="uri" default="radio://0/45/2M" />
+  <arg name="frame" default="/vicon/crazyflie4/crazyflie4" />
   <arg name="joy_dev" default="/dev/input/js0" />
   <arg name="x" default="0" />
   <arg name="y" default="0" />
@@ -10,10 +10,10 @@
   <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch">
   </include>
 
-  <group ns="crazyflie2">
+  <group ns="crazyflie">
     <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
       <arg name="uri" value="$(arg uri)" />
-      <arg name="tf_prefix" value="crazyflie2" />
+      <arg name="tf_prefix" value="crazyflie4" />
       <arg name="enable_logging" value="False" />
     </include>
 
@@ -23,7 +23,6 @@
 
     <node name="joystick_controller" pkg="crazyflie_demo" type="controller.py" output="screen">
       <param name="use_crazyflie_controller" value="True" />
-      <param name="joy_topic" value="/joy" /> <!--added this line -->
     </node>
 
     <include file="$(find crazyflie_controller)/launch/crazyflie2.launch">
@@ -38,7 +37,7 @@
       <param name="z" value="$(arg z)" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="baselink_broadcaster" args="0 0 0 0 0 0 1 $(arg frame) /crazyflie2/base_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="baselink_broadcaster" args="0 0 0 0 0 0 1 $(arg frame) /crazyflie4/base_link 100" />
   </group>
 
   <!-- run vicon bridge -->
