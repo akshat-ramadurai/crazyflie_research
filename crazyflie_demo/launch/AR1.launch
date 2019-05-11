@@ -34,8 +34,8 @@
       <param name="frame" value="$(arg frame)" />
     </node>
 
-    <!--<node name = "Get_loc" pkg = "crazyflie_controller" type = "get_tf_out.py" output ="screen">
-    </node> -->
+    <node name = "Get_cmd_vel" pkg = "crazyflie_controller" type = "sp_listener.py" output ="screen">
+    </node> 
   </group>
 
   <!-- run vicon bridge -->

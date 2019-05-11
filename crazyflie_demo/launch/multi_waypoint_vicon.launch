@@ -33,6 +33,22 @@
     <node name="pose" pkg="crazyflie_demo" type="demo2.py" output="screen">
       <param name="frame" value="$(arg frame2)" />
     </node>
+
+
+    <node name="A_listener" pkg="crazyflie_controller" type="sp_listener.py" output="screen">
+      <param name="write_path" value="$(find crazyflie_controller)/Matstuff/cmdvel.txt" />
+    </node> 
+    
+    <node name="A_listener2" pkg="crazyflie_controller" type="sp_listener2.py" output="screen">
+      <param name="write_path" value="$(find crazyflie_controller)/Matstuff/des_att.txt" />
+    </node> 
+
+    <node name="A_listener3" pkg="crazyflie_controller" type="sp_listener3.py" output="screen">
+      <param name="write_path" value="$(find crazyflie_controller)/Matstuff/dirty_der.txt" />
+    </node> 
+
+
+
   </group>
 
   <!-- run vicon bridge -->

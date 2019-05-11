@@ -8,7 +8,6 @@ if __name__ == '__main__':
 	listener = tf.TransformListener()
 	rate = rospy.Rate(30.0)
 	while not rospy.is_shutdown():
-		print('It\'s working')
 		try:
 			(trans,rot) = listener.lookupTransform('/world', '/vicon/crazyflie2/crazyflie2', rospy.Time(0))
 		except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):

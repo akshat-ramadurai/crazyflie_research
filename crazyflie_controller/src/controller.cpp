@@ -93,15 +93,15 @@ private:
     {
         float ex = vx_curr - vx_des;
         float ey = vy_curr - vy_des;
-        float des_pitch =  ((0-kx*ex)*cos(yaw*M_PI/180)+(0-ky*ey)*sin(yaw*M_PI/180))/(-g); // in radians
+        float des_pitch =  ((0-kx*ex)*cos(yaw*M_PI/180)+(0-ky*ey)*sin(yaw*M_PI/180))/(-g); // in radians CHANGED TO POSITIVE g 
         des_pitch = des_pitch*180/M_PI;
 
-        if(abs(des_pitch)<=30)
+        if(abs(des_pitch)<=10)
             return des_pitch;
         else if(des_pitch>0) 
-            return 30;  
+            return 10;  
         else if(des_pitch<0)
-            return -30;
+            return -10;
         
     }
     float desired_roll(float vx_curr,float vx_des,float vy_curr,float vy_des,float yaw,float g,float kx,float ky,float des_phi)
@@ -110,12 +110,12 @@ private:
         float ey = vy_curr - vy_des;
         float des_roll =  ((0-kx*ex)*sin(yaw*M_PI/180)*cos(des_phi*M_PI/180)-(0-ky*ey)*cos(yaw*M_PI/180)*cos(des_phi*M_PI/180))/(-g); // in radians
         des_roll =  des_roll*180/M_PI;
-        if(abs(des_roll)<=30)
+        if(abs(des_roll)<=10)
             return des_roll;
         else if(des_roll>0)
-            return 30;  
+            return 10;  
         else if(des_roll<0)
-            return -30;         
+            return -10;         
     }
 
     void goalChanged(
@@ -234,11 +234,15 @@ private:
                 vel.y = m_pidY.get_cur_vel(transform.getOrigin().y());
                 vel.z = m_pidZ.get_cur_vel(transform.getOrigin().z());
 
-                des_attitude.x = desired_pitch(vel.x,.2,vel.y,.2,yaw,9.8,3.5,3.5);
-                des_attitude.y = desired_roll(vel.x,.2,vel.y,.2,yaw,9.8,3.5,3.5,des_attitude.x);
+                des_attitude.x = desired_pitch(vel.x,0,vel.y,0,yaw,9.8,.5,.5);
+                des_attitude.y = desired_roll(vel.x,0,vel.y,0,yaw,9.8,.5,.5,des_attitude.x);
                 
-                msg.linear.x = m_pidX.update(0, targetDrone.pose.position.x);
-                msg.linear.y = m_pidY.update(0.0, targetDrone.pose.position.y);
+                msg.linear.x = m_pidX.update(0, targetDrone.pose.position.x); //des_attitude.x
+                msg.linear.y = m_pidY.update(0.0, targetDrone.pose.position.y);//des_attitude.y;
+               
+                //msg.linear.x = des_attitude.x;
+                //msg.linear.y = des_attitude.y;
+                
                 msg.linear.z = m_pidZ.update(0.0, targetDrone.pose.position.z);
                 msg.angular.z = m_pidYaw.update(0.0, yaw);
                 m_pubNav.publish(msg);

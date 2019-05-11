@@ -1,19 +1,26 @@
 #!/usr/bin/env python 
 import rospy 
 from geometry_msgs.msg import Twist 
+from geometry_msgs.msg import Point
 
+   
+#rospy.init_node('A_listener', anonymous=True)
+#epocht = rospy.get_time()  
 
 def write_to(str,t,x,y,z):
   f = open(str,'a')
   f.write('%.6f %.6f %.6f %.6f\n' % (t,x,y,z))
   f.close()
+
 def callback(msg):
-  x = msg.linear.x
-  y = msg.linear.y
-  epoch = rospy.get_time()-1556062300
-  write_to("pos.txt",epoch,x,y,0)
-  rospy.sleep(.15)
-  rospy.loginfo('time: {}'.format(epoch))
+  x = msg.linear.x # Roll command 
+  y = msg.linear.y #Pitch
+  z = msg.linear.z #Thrust
+  epoch = rospy.get_time()-1551570980.098825    
+  write_to(rospy.get_param('~write_path'),epoch,x,y,z)
+  #rospy.sleep(.1)
+  #rospy.loginfo('time: {}'.format(epocht))
+
 
 def main():
   rospy.init_node('A_listener', anonymous=True)
@@ -24,35 +31,3 @@ if __name__ == '__main__':
   main()
 
 
-
-
-
-
-
-"""
-import rospy
-from geometry_msgs.msg import Twist
- 
-def callback(data):
- rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
-     
-def listener():
-  print("Hello nom")
- # In ROS, nodes are uniquely named. If two nodes with the same
- # name are launched, the previous one is kicked off. The
- # anonymous=True flag means that rospy will choose a unique
- # name for our 'listener' node so that multiple listeners can
- # run simultaneously.
-  rospy.init_node('A_listener', anonymous=True)
-  
-  rospy.Subscriber("/crazyflie4/cmd_vel", Twist, callback)
-  try:
-    print(callback.linear.x)
-  # spin() simply keeps python from exiting until this node is stopped
-  
-
-  rospy.spin(10)
-   
-if __name__ == '__main__':
- listener()
-"""
